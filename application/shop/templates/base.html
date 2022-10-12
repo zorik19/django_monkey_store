@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Monkey</title>
+    <link rel="icon" type="image/x-icon" href="/static/shop/favicon.ico"/>
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{% url 'base' %}"><img src="/static/shop/monkey_.png" style="width: 140px"/></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="{% url 'base' %}">
+              Главная
+          </a>
+        </li>
+        {% if not request.user.is_authenticated %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'login' %}">Авторизация</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'registration' %}">Регистрация</a>
+          </li>
+        {% else %}
+          <li class="nav-item">
+          <a class="nav-link" href="{% url 'account' %}">Личный кабинет</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'logout' %}">Выйти</a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+             aria-expanded="false">
+            Уведомления <i class="fas fa-bell"></i>
+            <span class="badge bg-{% if notifications.count %}danger{% else %}secondary{% endif %} ">
+              {{ notifications.count }}
+            </span>
+          </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+              {% if notifications %}
+                {% for n in notifications %}
+                  <li><span class="dropdown-item">{{ n.text|safe }}</span> </li>
+                {% endfor %}
+                  <li><hr class="dropdown-divider"> </li>
+                  <li><a href="{% url 'clear_notifications'%}" class="dropdown-item">Пометить все как прочитанное</a> </li>
+              {% else %}
+                <li><a class="dropdown-item" href="#">Нет новых уведомлений</a> </li>
+              {% endif %}
+            </ul>
+
+        </li>
+        {% endif %}
+      </ul>
+      {% if request.user.is_authenticated %}
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a href="{% url 'cart' %}" class="nav-link">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="badge bg-danger">{{ cart.products.count }}</span>
+          </a>
+        </li>
+      </ul>
+      {% endif %}
+
+      <form class="d-flex">
+        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+        <button class="btn btn-outline-success" type="submit">Search</button>
+      </form>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  {% block content %}
+    <div class="col-md-12">
+      <div class="row">
+        <h1>Monkey clothes</h1>
+        {% for article in articles %}
+          <div class="card col-md-3 p-0 mb-3 mt-3 m-2">
+            <img src="{{ article.image.url }}" class="card-img-top" >
+            <div class="card-body text-center">
+              <h5 class="card-title">
+                <a href="{{ article.brand.get_absolute_url }}" class="text-decoration-none">
+                  {{ article.brand.name }}
+                </a>
+              </h5>
+              <h5 class="card-title">
+                <a href="{{ article.get_absolute_url }}" class="text-decoration-none">
+                  {{ article.name }}
+                </a>
+              </h5>
+            </div>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item">
+                Материал: <strong>{{ article.textile_type.name }}</strong>
+              </li>
+              <li class="list-group-item">
+                Дата релиза: <strong>{{ article.release_date|date:"d-m-Y" }}</strong>
+              </li>
+              <li class="list-group-item">
+                Тип одежды: <strong>{{ article.brand.kindclothes.name }}</strong>
+              </li>
+              <li class="list-group-item">
+                Наличие:
+                {% if article.stock %}
+                  <strong class="badge bg-success">
+                    Есть в наличии - {{ article.stock }} шт.
+                  </strong>
+                {% else %}
+                  <strong class="badge bg-danger">
+                    Нет в наличии
+                  </strong>
+                {% endif %}
+              </li>
+            </ul>
+            <div class="card-body text-center">
+              {% if request.user.is_authenticated %}
+                {% if article.stock %}
+                  {% if article not in cart.products_in_cart %}
+                    <a href="{% url 'add_to_cart' ct_model=article.ct_model slug=article.slug %}">
+                      <button class="btn btn-primary">Добавить в корзину</button>
+                    </a>
+                  {% else %}
+                    <a href="#" class="btn btn-default" disabled="">
+                      Добавлен1 в корзину
+                    </a>
+                  {% endif %}
+                {% else %}
+                  {% if article not in request.user.customer.wishlist.all %}
+                    <a href="{% url 'add_to_wishlist' article_id=article.id %}" class="btn btn-warning">Добавить в ожидаемое</a>
+                  {% else %}
+                    <a href="#" class="btn btn-default" disabled="">Добавлен в ожидаемое</a>
+                  {% endif %}
+                {% endif %}
+              {% else %}
+                <a href="#" class="btn btn-default" disabled="">Авторизуйтесь/Зарегистрируйтесь</a>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endblock content %}
+</div>
+
+</body>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
+</html>
